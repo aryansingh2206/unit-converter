@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        h2 {
+            color: #222;
+            margin-bottom: 15px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.5);
+            color: #222;
+            outline: none;
+            transition: background 0.3s ease-in-out;
+        }
+
+        select:hover, input:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        button {
+            background: #ff6f61;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background: #ff3b2f;
+            transform: scale(1.05);
+        }
+
+        .result {
+            margin-top: 15px;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Unit Converter</h2>
+        
+        <input type="number" id="inputValue" placeholder="Enter value" oninput="convertUnit()">
+        
+        <select id="unitType" onchange="convertUnit()">
+            <option value="length">Length</option>
+            <option value="weight">Weight</option>
+            <option value="time">Time</option>
+            <option value="currency">Currency</option>
+        </select>
+        
+        <select id="fromUnit" onchange="convertUnit()"></select>
+        <select id="toUnit" onchange="convertUnit()"></select>
+
+        <p class="result" id="resultText">Converted Value: -</p>
+    </div>
+
+    <script>
+        const unitOptions = {
+            length: { "Meters": 1, "Kilometers": 0.001, "Miles": 0.000621371, "Feet": 3.28084 },
+            weight: { "Grams": 1, "Kilograms": 0.001, "Pounds": 0.00220462, "Ounces": 0.035274 },
+            time: { "Seconds": 1, "Minutes": 1/60, "Hours": 1/3600, "Days": 1/86400 },
+            currency: {} // Live rates will be fetched
+        };
+
+        async function fetchExchangeRates() {
+            try {
+                const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+                const data = await response.json();
+                unitOptions.currency = data.rates;
+                populateUnits("currency");
+            } catch (error) {
+                console.error("Failed to fetch exchange rates:", error);
+            }
+        }
+
+        function populateUnits(type) {
+            const fromSelect = document.getElementById("fromUnit");
+            const toSelect = document.getElementById("toUnit");
+
+            fromSelect.innerHTML = "";
+            toSelect.innerHTML = "";
+
+            Object.keys(unitOptions[type]).forEach(unit => {
+                fromSelect.innerHTML += `<option value="${unitOptions[type][unit]}">${unit}</option>`;
+                toSelect.innerHTML += `<option value="${unitOptions[type][unit]}">${unit}</option>`;
+            });
+
+            convertUnit(); // Update conversion on change
+        }
+
+        function convertUnit() {
+            const inputValue = parseFloat(document.getElementById("inputValue").value);
+            const unitType = document.getElementById("unitType").value;
+            const fromUnitValue = parseFloat(document.getElementById("fromUnit").value);
+            const toUnitValue = parseFloat(document.getElementById("toUnit").value);
+            const resultText = document.getElementById("resultText");
+
+            if (isNaN(inputValue)) {
+                resultText.textContent = "Converted Value: -";
+                return;
+            }
+
+            const convertedValue = (inputValue / fromUnitValue) * toUnitValue;
+            resultText.textContent = `Converted Value: ${convertedValue.toFixed(4)}`;
+        }
+
+        document.getElementById("unitType").addEventListener("change", function () {
+            populateUnits(this.value);
+        });
+
+        // Initialize default unit type
+        populateUnits("length");
+
+        // Fetch live currency exchange rates
+        fetchExchangeRates();
+    </script>
+</body>
+</html>
